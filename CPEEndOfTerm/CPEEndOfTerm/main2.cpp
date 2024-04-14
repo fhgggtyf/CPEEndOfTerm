@@ -219,123 +219,160 @@ public:
         for (; prevCard[i] == nullptr; i++);
         int* prevEnter = prevCard[i];
         
-        int numOfPlayed=prevEnter[0];
-        int valueOfPlayed=prevEnter[1];
-        if(numOfPlayed==1 && (valueOfPlayed!=18)){
-            for(int i=0;1<18;i++)
-            {
-                if(cards[i]>valueOfPlayed)
+        int np=prevEnter[0];
+        int vp=prevEnter[1];
+        flag=1;
+        if(np==1){
+            for(int i=0;i<n;i++)
+                if(cards[i]>vp)
                 {
+                    flag=0;
                     input[1]=1;
                     input[2]=cards[i];
-                    break;
                 }
-            }
-        }
-        else if (numOfPlayed==2 && (valueOfPlayed!=18)){
-            for(int i=0;i<18;i++)
-            {
-                if(cards[i]>valueOfPlayed){
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                }
-                if(cnt>=1){
-                    input[1]=2;
-                    input[2]=t;
-                    break;
-                }
-            }
-        }
-        else if(numOfPlayed==3&&(valueOfPlayed!=18)){
-            for(int i=0;i<18;i++)
-            {
-                if(cards[i]>valueOfPlayed){
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                }
-                if(cnt>=2)
-                {
-                    input[1]=3;
-                    input[2]=t;
-                    break;
-                }
-            }
-        }
-        else{
-            for(int i=0;i<18;i++)
-            {
-                if(cards[i]>valueOfPlayed){
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                }
-                if(cnt>=3){
-                    input[1]=4;
-                    input[2]=t;
-                    break;
-                }
-                   
-            }
-        }
-        if (valueOfPlayed!=18){
-            if(numOfPlayed==1)
-            {
-                for(int i=0;1<18;i++)
+            if(flag==1){
+                flag=2;
+                for(i=0;i<18;i++)
                 {
                     t=cards[i];
                     for(int j=i+1;j<18;j++)
                         if(cards[j]==t)
                             cnt++;
-                    if(cnt>=1)
+                    if(cnt>=1){
+                        flag=1;
                         input[1]=2;
                         input[2]=t;
-                        break;
+                    }
                 }
             }
-            else if (numOfPlayed==2){
-                if(numOfPlayed==1)
+            if(flag==2){
+                flag=3
+                for(i=0;i<18;i++)
                 {
-                    for(int i=0;1<18;i++)
-                    {
-                        t=cards[i];
-                        for(int j=i+1;j<18;j++)
-                            if(cards[j]==t)
-                                cnt++;
-                        if(cnt>=2)
-                            input[1]=3;
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==3){
+                flag=4
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=2;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+        if(np==2){
+
+            flag=2;
+            for(i=0;i<18;i++)
+            {
+                t=cards[i];
+                if(t>=vp){
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                        if(cnt>=1){
+                            flag=1;
+                            input[1]=2;
                             input[2]=t;
-                            break;
+                        }
+                }
+
+            if(flag==2){
+                flag=3
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
                 }
             }
-            else if (numOfPlayed==3){
-                if(numOfPlayed==1)
+            if(flag==3){
+                flag=4
+                for(i=0;i<18;i++)
                 {
-                    for(int i=0;1<18;i++)
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=2;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+            if(np==3){
+                flag=3;
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=2){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+                    
+                }
+                if(flag==3){
+                    flag=4
+                    for(i=0;i<18;i++)
                     {
                         t=cards[i];
                         for(int j=i+1;j<18;j++)
                             if(cards[j]==t)
                                 cnt++;
-                        if(cnt>=3)
+                        if(cnt>=3){
+                            flag=2;
                             input[1]=4;
                             input[2]=t;
-                            break;
+                        }
+                    }
                 }
             }
-        }
-        else{
-            for(int i=0;i<18;i++)
-                if(cards[i]== or )//大王的编号 or 小王的编号
-                    cnt++;
-            if (cnt==2){
-            //出大小王
+            if(n==4){
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=3){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+                }
             }
-        }
         return input; // Or return nullptr if no bigger
     }
 };
