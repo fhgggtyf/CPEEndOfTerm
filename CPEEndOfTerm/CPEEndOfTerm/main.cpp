@@ -61,8 +61,8 @@ int main() {
             // If successfully contested
             if (prevCard[index % 3] != nullptr) {
                 // Clear other history
-                prevCard[index % 3 + 1] = nullptr;
-                prevCard[index % 3 + 2] = nullptr;
+                prevCard[(index+1)% 3] = nullptr;
+                prevCard[(index+2)%3] = nullptr;
             }
 
             // If no more card left
@@ -207,17 +207,174 @@ public:
     int* FreeMove() const override {
 
         // No contest AI logic
-
+        sort(cards,cards+18);
     }
 
     int* Move(int* prevCard[3]) const override {
+        sort(cards,cards+18);
         int* input = new int[2];
 
         // computer AI logic
+        int i = 0,cnt=0,t=0;
+        for (; prevCard[i] == nullptr; i++);
+        int* prevEnter = prevCard[i];
+        
+        int np=prevEnter[0];
+        int vp=prevEnter[1];
+        flag=1;
+        if(np==1){
+            for(int i=0;i<n;i++)
+                if(cards[i]>vp)
+                {
+                    flag=0;
+                    input[1]=1;
+                    input[2]=cards[i];
+                }
+            if(flag==1){
+                flag=2;
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=1){
+                        flag=1;
+                        input[1]=2;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==2){
+                flag=3
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==3){
+                flag=4
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=2;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+        if(np==2){
 
+            flag=2;
+            for(i=0;i<18;i++)
+            {
+                t=cards[i];
+                if(t>=vp){
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                        if(cnt>=1){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                }
+
+            if(flag==2){
+                flag=3
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==3){
+                flag=4
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=2;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+            if(np==3){
+                flag=3;
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=2){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+                    
+                }
+                if(flag==3){
+                    flag=4
+                    for(i=0;i<18;i++)
+                    {
+                        t=cards[i];
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=3){
+                            flag=2;
+                            input[1]=4;
+                            input[2]=t;
+                        }
+                    }
+                }
+            }
+            if(n==4){
+                for(i=0;i<18;i++)
+                {
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=3){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+                }
+            }
         return input; // Or return nullptr if no bigger
     }
-
 };
 
 class Card {
