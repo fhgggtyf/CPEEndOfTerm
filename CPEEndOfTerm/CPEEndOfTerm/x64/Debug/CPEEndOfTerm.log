@@ -1,4 +1,4 @@
 ﻿  main.cpp
 C:\Users\user\Documents\GitHub\CPEEndOfTerm\CPEEndOfTerm\CPEEndOfTerm\main.cpp(100,13): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
-C:\Users\user\Documents\GitHub\CPEEndOfTerm\CPEEndOfTerm\CPEEndOfTerm\main.cpp(248,13): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+C:\Users\user\Documents\GitHub\CPEEndOfTerm\CPEEndOfTerm\CPEEndOfTerm\main.cpp(249,13): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
   CPEEndOfTerm.vcxproj -> C:\Users\user\Documents\GitHub\CPEEndOfTerm\CPEEndOfTerm\x64\Debug\CPEEndOfTerm.exe

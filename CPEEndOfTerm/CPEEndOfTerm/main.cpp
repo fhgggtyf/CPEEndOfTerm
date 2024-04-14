@@ -106,13 +106,13 @@ public:
 	void MakePlay(int input[2]) {
 		int count = 0;
 		cards.erase(
-			std::remove_if(cards.begin(), cards.end(),
+			remove_if(cards.begin(), cards.end(),
 				[&count, input](const Card& card) {
 					if (count < input[0] && card.getValue() == input[1]) {
 						++count;
-						return true;  // Mark this person for removal
+						return true;  
 					}
-					return false;  // Do not remove this person
+					return false;  
 				}),
 			cards.end()
 		);
@@ -283,6 +283,7 @@ int main() {
 		}
 
 		cout << "Winner is: " << winner->GetName() << endl;
+		gameOn = false;
 	}
 }
 
@@ -335,7 +336,7 @@ void DisplayHand(vector<Card> cards) {
 
 
 vector<Card> SortCards(vector<Card> cards) {
-	std::sort(cards.begin(), cards.end(), [](const Card& a, const Card& b) {
+	sort(cards.begin(), cards.end(), [](const Card& a, const Card& b) {
 		return a < b; // Compare based on name for sorting
 		});
 
