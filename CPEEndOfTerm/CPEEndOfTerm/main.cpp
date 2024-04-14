@@ -1,423 +1,345 @@
 #include <iostream>
 #include <cstdlib>  
-#include <ctime>    
+#include <ctime>  
+#include <vector>
+#include <random>
+#include <algorithm> 
 
 using namespace std;
 
-class Card;
+#define PLAYERNUM 3
 
-class Participant;
-class Player;
-class Computer;
+enum Suit {
+	Hearts = 0,
+	Diamonds = 1,
+	Clubs = 2,
+	Spades = 3,
+	Joker = 4
+};
 
-Card* GenerateDeck();
-void Shuffle(Card* deck);
-void SplitCards(Card* cards, Participant* participants); // might want to add parameter computer
-void DisplayHand(Card* cards);
+class Card {
+private:
+	Suit suit;
+	int value;
+
+public:
+	Card() {
+		suit = static_cast<Suit>(0);
+		value = 0;
+	}
+
+	Card(int s, int v) {
+		if (s >= 0 && s <= 4 && v >= 0 && v <= 14) {
+			suit = static_cast<Suit>(s);
+			value = v;
+		}
+		else {
+			throw invalid_argument("Invalid suit or value");
+		}
+	}
+
+	string getSuitAsString() const {
+		switch (suit) {
+		case Hearts: return "Hearts";
+		case Diamonds: return "Diamonds";
+		case Clubs: return "Clubs";
+		case Spades: return "Spades";
+		case Joker: return "Joker";
+		default: return "Unknown Suit";
+		}
+	}
+
+	int getValue() const {
+		return value;
+	}
+
+	// Overload < operator
+	bool operator<(const Card& other) const {
+		if (value != other.value) {
+			return value < other.value;
+		}
+		else {
+			return (int)suit < (int)other.suit;
+		}
+	}
+
+	// Overload > operator
+	bool operator>(const Card& other) const {
+		if (value != other.value) {
+			return value > other.value;
+		}
+		else {
+			return (int)suit > (int)other.suit;
+		}
+	}
+};
+
+
+class Participant {
+
+protected:
+	vector<Card> cards;
+	int numOfCards;
+	string name;
+
+public:
+
+	void SetCards(Card value) {
+		cards.push_back(value);
+	}
+
+	int GetCardNum() {
+		return numOfCards;
+	}
+
+	string GetName() {
+		return name;
+	}
+
+	bool Validate(int input[2]) const {
+		int count = count_if(cards.begin(), cards.end(), [input](const Card& card) {
+			return card.getValue() == input[1];
+			});
+		return count >= input[0];
+	}
+
+	void MakePlay(int input[2]) {
+		int count = 0;
+		cards.erase(
+			std::remove_if(cards.begin(), cards.end(),
+				[&count, input](const Card& card) {
+					if (count < input[0] && card.getValue() == input[1]) {
+						++count;
+						return true;  // Mark this person for removal
+					}
+					return false;  // Do not remove this person
+				}),
+			cards.end()
+		);
+	}
+
+	virtual int* FreeMove() { return nullptr; };
+
+	virtual int* Move(int* prevCard[PLAYERNUM]) { return nullptr; };
+
+};
+
+vector<Card> GenerateDeck();
+vector<Card> Shuffle(vector<Card> deck);
+void SplitCards(vector<Card> cards, Participant** participants);
+void DisplayHand(vector<Card> cards);
+vector<Card> SortCards(vector<Card> cards);
+
+class Player : public Participant {
+
+public:
+	Player(int i) {
+		cards = {};
+		numOfCards = 54 / PLAYERNUM;
+		name = "player" + i;
+	}
+
+	int* FreeMove() override {
+		int* input = new int[2];
+
+		DisplayHand(cards);
+
+		cout << "No one contests you. What do you want to play? " << endl;
+		cin >> input[0] >> input[1];
+
+		if (Validate(input)) {
+			MakePlay(input);
+			numOfCards -= input[0];
+		}
+
+		return input;
+	}
+
+	int* Move(int* prevCard[PLAYERNUM]) override {
+
+		// Find previous entry
+		int i = 0;
+		for (; prevCard[i] == nullptr; i++);
+		int* prevEnter = prevCard[i];
+
+		int* input = new int[2];
+
+		DisplayHand(cards);
+
+		cout << "Previous entry is " << prevEnter[0] << " " << prevEnter[1] << ". What do you want to play? " << endl;
+		cin >> input[0] >> input[1];
+		if (input[0] == -1) {
+			return nullptr;
+		}
+		else {
+			// Validation
+			if (Validate(input) && (input[0] > prevEnter[0] || (input[0] == prevEnter[0] && input[1] > prevEnter[1]))) {
+				MakePlay(input);
+				numOfCards -= input[0];
+			}
+			// If passed:
+			return input;
+		}
+	}
+
+};
+
+//class Computer : public Participant {
+//
+//public:
+//    Computer(int i) {
+//        cards = {};
+//		  numOfCards = 54 / PLAYERNUM;
+//        name = "player" + i + "(AI)";
+//    }
+//
+//    int* FreeMove() const override {
+//
+//        // No contest AI logic
+//
+//
+//
+//    }
+//
+//    int* Move(int* prevCard[PLAYERNUM]) const override {
+//    }
+//};
 
 int main() {
-    // Initialize players
-    Player* player = new Player();
-    Computer* cp1 = new Computer("Computer 1");
-    Computer* cp2 = new Computer("Computer 2");
 
-    // Create group of participants
-    Participant* participants[3] = { player, cp1, cp2};
 
-    // Generate deck
-	Card* cards = GenerateDeck();
+	// Create group of participants
+	Participant** participants = new Participant * [PLAYERNUM];
 
-    // Default start game
+	int choice;
+	for (int i = 0; i < PLAYERNUM; i++) {
+		cout << "Add a player (0: AI, 1: Player):";
+		cin >> choice;
+		if (choice == 1) {
+			participants[i] = new Player(i);
+		}
+		//else {
+		//	participants[i] = new Computer(i);
+		//}
+	}
+
+	// Generate deck
+	vector<Card> cards = GenerateDeck();
+
+	// Default start game
 	bool gameOn = true;
 
-    // Play history
-    int* prevCard[3];
+	// Play history
+	int** prevCard = new int* [PLAYERNUM];
 
-    // Starting index
-    int index;
+	// Now allocate each sub-array
+	for (int i = 0; i < PLAYERNUM; i++) {
+		prevCard[i] = nullptr;
+	}
 
-    Participant* winner;
+	// Starting index
+	int index;
+
+	Participant* winner;
 
 	while (gameOn) {
-		Shuffle(cards);
-		SplitCards(cards, *participants);
+		cards = Shuffle(cards);
+		SplitCards(cards, participants);
 
 		srand(time(NULL));
-		index = rand() % 3;
+		index = rand() % PLAYERNUM;
 
-        // First player play
-        prevCard[index % 3] = participants[index % 3]->FreeMove();
-        index++;
+		// First player play
+		prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();
+		index++;
 
 		while (true) {
 
-            if (prevCard[index % 3] != nullptr) { // If previous move was never contested
-                prevCard[index % 3] = participants[index % 3]->FreeMove();  // Have a free move
-            }
-            else { //If there is a previous move
-                prevCard[index % 3] = participants[index % 3]->Move(prevCard);  // Move according to prev move
-            }
+			if (prevCard[index % PLAYERNUM] != nullptr) { // If previous move was never contested
+				prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();  // Have a free move
+			}
+			else { //If there is a previous move
+				prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->Move(prevCard);  // Move according to prev move
+			}
 
-            // If successfully contested
-            if (prevCard[index % 3] != nullptr) {
-                // Clear other history
-                prevCard[(index+1)% 3] = nullptr;
-                prevCard[(index+2)%3] = nullptr;
-            }
+			// If successfully contested
+			if (prevCard[index % PLAYERNUM] != nullptr) {
 
-            // If no more card left
-            if (participants[index % 3]->GetCardNum() == 0) {
-                // Get winner and break loop
-                winner = participants[index % 3];
-                break;
-            }
+				for (int i = 0; i < PLAYERNUM - 1; i++) {
+					prevCard[(index + i + 1) % PLAYERNUM] = nullptr;
+				}
+				// Clear other history
+			}
 
-            // Advance to next player
-            index++;
+			// If no more card left
+			if (participants[index % PLAYERNUM]->GetCardNum() == 0) {
+				// Get winner and break loop
+				winner = participants[index % PLAYERNUM];
+				break;
+			}
+
+			// Advance to next player
+			index++;
 		}
 
-        cout << "Winner is: " << winner->GetName() << endl;
-    }
+		cout << "Winner is: " << winner->GetName() << endl;
+	}
 }
 
-Card* GenerateDeck(){
-    Card* cards = new Card[54];
+vector<Card> GenerateDeck() {
+	vector<Card> cards;
+	cards.reserve(54);  // Pre-allocate memory for 52 cards + 2 jokers to avoid reallocations
 
-    for (int i = 0; i < 13; i++) {
-        for (int j = 0; j < 4; j++) {
-            cards[i * 4 + j] = Card(j, i);
-        }
-    }
-    cards[52] = Card(4, 0);
-    cards[53] = Card(4, 1);
+	// Loop over suits and values to create standard cards
+	for (int suit = 0; suit < 4; suit++) {  // Loop over 4 suits
+		for (int value = 0; value < 13; value++) {  // Loop over 13 values (0 to 12)
+			cards.emplace_back(suit, value);  // Use emplace_back for efficiency
+		}
+	}
 
-    return cards;
+	// Add jokers to the deck
+	cards.emplace_back(4, 13);  // First Joker
+	cards.emplace_back(4, 14);  // Second Joker
+
+	return cards;
 }
 
-void Shuffle(Card* deck) {
-    srand(time(NULL));
+vector<Card> Shuffle(vector<Card> deck) {
+	// Create a random engine; using the random_device to seed it provides some level of randomness
+	random_device rd; // Obtain a random number from hardware
+	default_random_engine eng(rd()); // Seed the engine
 
-    for (int i = 54 - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        swap(deck[i], deck[j]);
-    }
+	// Shuffle the vector
+	shuffle(deck.begin(), deck.end(), eng);
+	return deck;
 }
 
-void SplitCards(Card* cards, Participant* participants) {
+void SplitCards(vector<Card> cards, Participant** participants) {
 
-	for (int i = 0; i < 18; i++) {
-		for (int j = 0; j < 3; j++) {
-			participants[j].SetCards(i, cards[j * 18 + i]);
+	for (int i = 0; i < 54 / PLAYERNUM; i++) {
+		for (int j = 0; j < PLAYERNUM; j++) {
+			participants[j]->SetCards(cards[54 / PLAYERNUM * j + i]);
 		}
 
 	}
 }
 
-void DisplayHand(Card* cards) {
+void DisplayHand(vector<Card> cards) {
 
+	cards = SortCards(cards);
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		cout << it->getValue() << " ";
+	}
 }
 
-class Participant {
 
-protected:
-    Card* cards;
-    int numOfCards;
-    string name;
+vector<Card> SortCards(vector<Card> cards) {
+	std::sort(cards.begin(), cards.end(), [](const Card& a, const Card& b) {
+		return a < b; // Compare based on name for sorting
+		});
 
-public:
-
-    void SetCards(int index, Card value) {
-        cards[index] = value;
-    }
-
-    int GetCardNum() {
-        return numOfCards;
-    }
-
-    string GetName() {
-        return name;
-    }
-
-    virtual int* FreeMove() const = 0;
-
-    virtual int* Move(int* prevCard[3]) const = 0;
-
-};
-
-class Player : public Participant {
-
-public:
-    Player() {
-        cards = new Card[18];
-        numOfCards = 18;
-        name = "player";
-    }
-
-    int* FreeMove() const override {
-        int* input = new int[2];
-
-        DisplayHand(cards);
-
-        cout << "No one contests you. What do you want to play? " << endl;
-        cin >> input[0] >> input[1];
-
-        // Validation
-
-        return input;
-    }
-
-    int* Move(int* prevCard[3]) const override {
-
-        // Find previous entry
-        int i = 0;
-        for (; prevCard[i] == nullptr; i++);
-        int* prevEnter = prevCard[i];
-
-        int* input = new int[2];
-
-        DisplayHand(cards);
-
-        cout << "Previous entry is " << prevEnter[0] << " " << prevEnter[1] << ". What do you want to play? " << endl;
-        cin >> input[0] >> input[1];
-        if (input[0] == -1) {
-            return nullptr;
-        }
-        else {
-            // Validation
-        
-            // If passed:
-            return input;
-            // Else go back to prompt
-        }
+	return cards;
+}
 
 
-    }
-
-};
-
-class Computer : public Participant {
-
-public:
-    Computer(string n) {
-        cards = new Card[18];
-        numOfCards = 18;
-        name = n;
-    }
-
-    int* FreeMove() const override {
-
-        // No contest AI logic
-        sort(cards,cards+18);
-    }
-
-    int* Move(int* prevCard[3]) const override {
-        sort(cards,cards+18);
-        int* input = new int[2];
-
-        // computer AI logic
-        int i = 0,cnt=0,t=0;
-        for (; prevCard[i] == nullptr; i++);
-        int* prevEnter = prevCard[i];
-        
-        int np=prevEnter[0];
-        int vp=prevEnter[1];
-        flag=1;
-        if(np==1){
-            for(int i=0;i<n;i++)
-                if(cards[i]>vp)
-                {
-                    flag=0;
-                    input[1]=1;
-                    input[2]=cards[i];
-                }
-            if(flag==1){
-                flag=2;
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                    if(cnt>=1){
-                        flag=1;
-                        input[1]=2;
-                        input[2]=t;
-                    }
-                }
-            }
-            if(flag==2){
-                flag=3
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                    if(cnt>=2){
-                        flag=2;
-                        input[1]=3;
-                        input[2]=t;
-                    }
-                }
-            }
-            if(flag==3){
-                flag=4
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                    if(cnt>=3){
-                        flag=2;
-                        input[1]=4;
-                        input[2]=t;
-                    }
-                }
-            }
-        }
-        if(np==2){
-
-            flag=2;
-            for(i=0;i<18;i++)
-            {
-                t=cards[i];
-                if(t>=vp){
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                        if(cnt>=1){
-                            flag=1;
-                            input[1]=2;
-                            input[2]=t;
-                        }
-                }
-
-            if(flag==2){
-                flag=3
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                    if(cnt>=2){
-                        flag=2;
-                        input[1]=3;
-                        input[2]=t;
-                    }
-                }
-            }
-            if(flag==3){
-                flag=4
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    for(int j=i+1;j<18;j++)
-                        if(cards[j]==t)
-                            cnt++;
-                    if(cnt>=3){
-                        flag=2;
-                        input[1]=4;
-                        input[2]=t;
-                    }
-                }
-            }
-        }
-            if(np==3){
-                flag=3;
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    if(t>=vp){
-                        for(int j=i+1;j<18;j++)
-                            if(cards[j]==t)
-                                cnt++;
-                        if(cnt>=2){
-                            flag=1;
-                            input[1]=2;
-                            input[2]=t;
-                        }
-                    }
-                    
-                }
-                if(flag==3){
-                    flag=4
-                    for(i=0;i<18;i++)
-                    {
-                        t=cards[i];
-                        for(int j=i+1;j<18;j++)
-                            if(cards[j]==t)
-                                cnt++;
-                        if(cnt>=3){
-                            flag=2;
-                            input[1]=4;
-                            input[2]=t;
-                        }
-                    }
-                }
-            }
-            if(n==4){
-                for(i=0;i<18;i++)
-                {
-                    t=cards[i];
-                    if(t>=vp){
-                        for(int j=i+1;j<18;j++)
-                            if(cards[j]==t)
-                                cnt++;
-                        if(cnt>=3){
-                            flag=1;
-                            input[1]=2;
-                            input[2]=t;
-                        }
-                    }
-                }
-            }
-        return input; // Or return nullptr if no bigger
-    }
-};
-
-class Card {
-private:
-    Suit suit; 
-    int value;  
-
-public:
-    Card() {
-        suit = static_cast<Suit>(0);
-        value = 0;
-    }
-
-    Card(int s, int v) {
-        if (s >= 0 && s <= 4 && v >= 0 && v < 13) {
-            suit = static_cast<Suit>(s);
-            value = v;
-        }
-        else {
-            throw invalid_argument("Invalid suit or value");
-        }
-    }
-
-    string getSuitAsString() const {
-        switch (suit) {
-        case Hearts: return "Hearts";
-        case Diamonds: return "Diamonds";
-        case Clubs: return "Clubs";
-        case Spades: return "Spades";
-        case Joker: return "Joker";
-        default: return "Unknown Suit";
-        }
-    }
-
-    int getValue() const {
-        return value;
-    }
-};
-
-enum Suit {
-    Hearts = 0,
-    Diamonds = 1,
-    Clubs = 2,
-    Spades = 3,
-    Joker = 4
-};
