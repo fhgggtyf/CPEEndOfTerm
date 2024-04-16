@@ -184,26 +184,204 @@ public:
 
 };
 
-//class Computer : public Participant {
-//
-//public:
-//    Computer(int i) {
-//        cards = {};
-//		  numOfCards = 54 / PLAYERNUM;
-//        name = "player" + i + "(AI)";
-//    }
-//
-//    int* FreeMove() const override {
-//
-//        // No contest AI logic
-//
-//
-//
-//    }
-//
-//    int* Move(int* prevCard[PLAYERNUM]) const override {
-//    }
-//};
+class Computer : public Participant {
+
+public:
+    Computer(int i) {
+        cards = {};
+    	numOfCards = 54 / PLAYERNUM;
+        name = "player" + i + "(AI)";
+   }
+	SortCards(cards);
+    int* FreeMove() const override {
+    	return cards[0];
+    }
+
+   int* Move(int* prevCard[PLAYERNUM]) const override {
+    	int* input = new int[2];
+    	int i;
+    	input=nullptr;
+    	for (; prevCard[i] == nullptr; i++);
+    	int* prevEnter = prevCard[i];
+    	int np=prevEnter[0];//number
+    	int vp=prevEnter[1];//value
+    	int t,flag,cnt=0;
+
+        if(np==1){// case of one card
+        	flag=1;
+            for(int i=0;i<numOfCards;i++)//just output 1card
+                if(cards[i]>vp)
+                {
+                    flag=0;
+                    input[1]=1;
+                    input[2]=cards[i];
+                }
+            if(flag==1){//just output 2 card
+                flag=2;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==1)
+                		break;
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=1){
+                        flag=1;
+                        input[1]=2;
+                        input[2]=t;
+                    	break;
+                    }
+                }
+            }
+            if(flag==2){// output3 cards
+                flag=3;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==2)
+                		break;
+                    t=cards[i];//find
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==3){//output 4cards
+                flag=4;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==3)
+                		break;
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=3;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+        if(np==2){//player 2 card
+            flag=2;
+            for(int i=0;i<18;i++)//output2card
+            {
+                t=cards[i];
+                if(t>=vp){
+                	if(flag==1)
+                		break;
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                	if(cnt>=1){
+                		flag=1;
+                		input[1]=2;
+                		input[2]=t;
+                        }
+                }
+
+            if(flag==2){//output3 card
+                flag=3;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==2)
+                		break;
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=2){
+                        flag=2;
+                        input[1]=3;
+                        input[2]=t;
+                    }
+                }
+            }
+            if(flag==3){//output4card
+                flag=4;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==3)
+                		break;
+                    t=cards[i];
+                    for(int j=i+1;j<18;j++)
+                        if(cards[j]==t)
+                            cnt++;
+                    if(cnt>=3){
+                        flag=3;
+                        input[1]=4;
+                        input[2]=t;
+                    }
+                }
+            }
+        }
+            if(np==3){//player 3 card
+                flag=3;
+                for(int i=0;i<18;i++)//find 3 card
+                {
+                	if(flag==4)
+                		break;
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=2){
+                            flag=4;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+
+                }
+                if(flag==3){//find 4 card
+                    flag=4;
+                    for(int i=0;i<18;i++)
+                    {
+                    	if(flag==2)
+                    		break;
+                        t=cards[i];
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=3){
+                            flag=2;
+                            input[1]=4;
+                            input[2]=t;
+                        }
+                    }
+                }
+            }
+            if(np==4){
+            	flag=4;
+                for(int i=0;i<18;i++)
+                {
+                	if(flag==1)
+                		break;
+                    t=cards[i];
+                    if(t>=vp){
+                        for(int j=i+1;j<18;j++)
+                            if(cards[j]==t)
+                                cnt++;
+                        if(cnt>=3){
+                            flag=1;
+                            input[1]=2;
+                            input[2]=t;
+                        }
+                    }
+                }
+            }
+        	return input;
+
+    }
+};
 
 int main() {
 
