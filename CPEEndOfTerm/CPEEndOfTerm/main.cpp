@@ -1,9 +1,12 @@
-#include <iostream>
+﻿#include <iostream>
+#include <string>
 #include <cstdlib>
 #include <ctime>
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <fcntl.h>   // For _O_U16TEXT
+#include <io.h>      // For _setmode()
 
 using namespace std;
 
@@ -34,18 +37,18 @@ public:
 			value = v;
 		}
 		else {
-			throw invalid_argument("Invalid suit or value");
+			cout << "err";
 		}
 	}
 
-	string getSuitAsString() const {
+	wstring getSuitAsSymbol() const {
 		switch (suit) {
-		case Hearts: return "Hearts";
-		case Diamonds: return "Diamonds";
-		case Clubs: return "Clubs";
-		case Spades: return "Spades";
-		case Joker: return "Joker";
-		default: return "Unknown Suit";
+		case Hearts: return L"♥";
+		case Diamonds: return L"♦";
+		case Clubs: return L"♣";
+		case Spades: return L"♠";
+		case Joker: return L"Joker";
+		default: return L"Unknown Suit";
 		}
 	}
 
@@ -80,7 +83,7 @@ class Participant {
 protected:
 	vector<Card> cards;
 	int numOfCards;
-	string name;
+	wstring name;
 
 public:
 
@@ -92,32 +95,63 @@ public:
 		return numOfCards;
 	}
 
-	string GetName() {
+	wstring GetName() {
 		return name;
 	}
 
 	bool Validate(int input[2]) const {
-		int count = count_if(cards.begin(), cards.end(), [input](const Card& card) {
-			return card.getValue() == input[1];
-			});
-		cout << count << " " << input[1]<<endl;
-		cout << count <<" " << input[0] << endl;
-		return count >= input[0];
+		if (input[0] == 2 && input[1] == 13) {
+			int count1 = count_if(cards.begin(), cards.end(), [input](const Card& card) {
+				return card.getValue() == 13;
+				});
+			int count2 = count_if(cards.begin(), cards.end(), [input](const Card& card) {
+				return card.getValue() == 14;
+				});
+
+			wcout << count1 << " " << count2 << endl;
+			return count1 == 1 && count2 == 1;
+		}
+		else {
+			int count = count_if(cards.begin(), cards.end(), [input](const Card& card) {
+				return card.getValue() == input[1];
+				});
+			return count >= input[0];
+		}
+
 	}
 
 	void MakePlay(int input[2]) {
-		int count = 0;
-		cards.erase(
-			remove_if(cards.begin(), cards.end(),
-				[&count, input](const Card& card) {
-					if (count < input[0] && card.getValue() == input[1]) {
-						++count;
-						return true;
-					}
-					return false;
-				}),
-			cards.end()
-		);
+
+		if (input[0] == 2 && input[1] == 13) {
+			cards.erase(
+				remove_if(cards.begin(), cards.end(),
+					[input](const Card& card) {
+						return card.getValue() == input[1];
+					}),
+				cards.end()
+			);
+			cards.erase(
+				remove_if(cards.begin(), cards.end(),
+					[input](const Card& card) {
+						return card.getValue() == input[1] + 1;
+					}),
+				cards.end()
+			);
+		}
+		else {
+			int count = 0;
+			cards.erase(
+				remove_if(cards.begin(), cards.end(),
+					[&count, input](const Card& card) {
+						if (count < input[0] && card.getValue() == input[1]) {
+							++count;
+							return true;
+						}
+						return false;
+					}),
+				cards.end()
+			);
+		}
 	}
 
 	virtual int* FreeMove() { return nullptr; };
@@ -131,6 +165,8 @@ vector<Card> Shuffle(vector<Card> deck);
 void SplitCards(vector<Card> cards, Participant** participants);
 void DisplayHand(vector<Card> cards);
 vector<Card> SortCards(vector<Card> cards);
+wstring getSymbolUsingValue(int value);
+int getValueUsingSymbol(wstring symbol);
 
 class Player : public Participant {
 
@@ -138,28 +174,36 @@ public:
 	Player(int i) {
 		cards = {};
 		numOfCards = 54 / PLAYERNUM;
-		name = "player" + i;
+		name = L"Player " + to_wstring(i + 1);
 	}
 
 	int* FreeMove() override {
-		int* input = new int[2];
+		wstring* input = new wstring[2];
+		int* castedInput = new int[2];
 
+		wcout << name << L"'s cards:" << endl;
 		DisplayHand(cards);
 
 		while (true) {
-			cout << "No one contests you. What do you want to play? " << endl;
-			cin >> input[0] >> input[1];
+			wcout << L"No one contests you. What do you want to play? " << endl;
+			wcin >> input[0] >> input[1];
 
-			if (Validate(input)) {
-				MakePlay(input);
-				numOfCards -= input[0];
+			castedInput[0] = stoi(input[0]);
+			castedInput[1] = getValueUsingSymbol(input[1]);
+
+			wcout << castedInput[0] << " " << castedInput[1];
+
+			if (Validate(castedInput)) {
+				MakePlay(castedInput);
+				numOfCards -= castedInput[0];
 				break;
 			}
 			else {
-				cout << "Invalid Input." << endl;
+				wcout << L"Invalid Input." << endl;
 			}
 		}
-		return input;
+
+		return castedInput;
 	}
 
 	int* Move(int* prevCard[PLAYERNUM]) override {
@@ -169,29 +213,37 @@ public:
 		for (; prevCard[i] == nullptr; i++);
 		int* prevEnter = prevCard[i];
 
-		int* input = new int[2];
+		wstring* input = new wstring[2];
+		int* castedInput = new int[2];
 
+		wcout << name << L"'s cards:" << endl;
 		DisplayHand(cards);
 
 		// Validation
 		while (true) {
-			cout << "Previous entry is " << prevEnter[0] << " " << prevEnter[1] << ". What do you want to play? " << endl;
-			cin >> input[0] >> input[1];
-			if (input[0] == -1) {
+			wcout << L"Previous player played " << prevEnter[0] << L" number of " << getSymbolUsingValue(prevEnter[1]) << L". What do you want to play? " << endl;
+			wcin >> input[0] >> input[1];
+
+
+			castedInput[0] = stoi(input[0]);
+			castedInput[1] = getValueUsingSymbol(input[1]);
+
+			if (castedInput[0] == -1) {
 				return nullptr;
 			}
 			else {
-				if (Validate(input) && (input[0] > prevEnter[0] || (input[0] == prevEnter[0] && input[1] > prevEnter[1]))) {
-					MakePlay(input);
-					numOfCards -= input[0];
+				if (Validate(castedInput) && (castedInput[0] > prevEnter[0] || (castedInput[0] == prevEnter[0] && castedInput[1] > prevEnter[1]))) {
+					MakePlay(castedInput);
+					numOfCards -= castedInput[0];
 					break;
 				}
 				else {
-					cout << "Invalid Input." << endl;
+					wcout << L"Invalid Input." << endl;
 				}
 			}
 		}
-		return input;
+
+		return castedInput;
 	}
 };
 
@@ -201,23 +253,22 @@ public:
 	Computer(int i) {
 		cards = {};
 		numOfCards = 54 / PLAYERNUM;
-		name = "(AI)player" + i;
+		name = L"(AI)player " + to_wstring(i + 1);
 	}
 	int* FreeMove() override {
 		cards = SortCards(cards);
 
-		DisplayHand(cards);
-		cout << "\n";
-
 		int* input = new int[2];
 		input[0] = 1;
 		input[1] = cards[0].getValue();
+
+		MakePlay(input);
+		numOfCards -= input[0];
+
 		return input;
 	}
 
 	int* Move(int* prevCard[PLAYERNUM]) override {
-		DisplayHand(cards);
-		cout << "\n";
 
 		int* input = new int[2];
 		int* xiaow = new int[2];
@@ -239,6 +290,8 @@ public:
 			input[1] = j;
 			if (Validate(input)) {
 				MakePlay(input);
+				numOfCards -= input[0];
+
 				return input;
 			}
 		}
@@ -249,13 +302,18 @@ public:
 				input[1] = j;
 				if (Validate(input)) {
 					MakePlay(input);
+					numOfCards -= input[0];
+
 					return input;
 				}
 			}
 		if (Validate(xiaow) == true && Validate(daw) == true) {//Double joker
 			input[0] = 2;
 			input[1] = 13;
+
 			MakePlay(input);
+			numOfCards -= input[0];
+
 			return input;
 		}
 		return	nullptr;
@@ -263,14 +321,14 @@ public:
 };
 
 int main() {
-
+	_setmode(_fileno((__acrt_iob_func(1))), _O_U16TEXT);
 
 	// Create group of participants
 	Participant** participants = new Participant * [PLAYERNUM];
 
 	int choice;
 	for (int i = 0; i < PLAYERNUM; i++) {
-		cout << "Add a player (0: AI, 1: Player):";
+		wcout << L"Add a player (0: AI, 1: Player):";
 		cin >> choice;
 		if (choice == 1) {
 			participants[i] = new Player(i);
@@ -339,7 +397,7 @@ int main() {
 			index++;
 		}
 
-		cout << "Winner is: " << winner->GetName() << endl;
+		wcout << L"Winner is: " << winner->GetName() << endl;
 		gameOn = false;
 	}
 }
@@ -387,10 +445,87 @@ void DisplayHand(vector<Card> cards) {
 	cards = SortCards(cards);
 
 	for (auto it = cards.begin(); it != cards.end(); ++it) {
-		cout << it->getValue() << " ";
+		wcout << L"----";
 	}
-}
+	wcout << L"------" << endl;
 
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker") {
+			wcout << L"|B  ";
+		}
+		else if (getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|R  ";
+		}
+		else {
+			if (getSymbolUsingValue(it->getValue()) == L"10") {
+				wcout << L"|" << getSymbolUsingValue(it->getValue()) << L" ";
+			}
+			else {
+				wcout << L"|" << getSymbolUsingValue(it->getValue()) << L"  ";
+			}
+		}
+	}
+	wcout << L"     |" << endl;
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker" || getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|J  ";
+		}
+		else {
+			wcout << L"|" << it->getSuitAsSymbol() << L"  ";
+		}
+	}
+	wcout << L"     |" << endl;
+
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker" || getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|O  ";
+		}
+		else {
+			wcout << L"|   ";
+		}
+	}
+	wcout << L"     |" << endl;
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker" || getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|K  ";
+		}
+		else {
+			wcout << L"|   ";
+		}
+	}
+	wcout << L"     |" << endl;
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker" || getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|E  ";
+		}
+		else {
+			wcout << L"|   ";
+		}
+	}
+	wcout << L"     |" << endl;
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		if (getSymbolUsingValue(it->getValue()) == L"BJoker" || getSymbolUsingValue(it->getValue()) == L"RJoker") {
+			wcout << L"|R  ";
+		}
+		else {
+			wcout << L"|   ";
+		}
+	}
+	wcout << L"     |" << endl;
+
+	for (auto it = cards.begin(); it != cards.end(); ++it) {
+		wcout << L"----";
+	}
+	wcout << L"------" << endl;
+
+
+
+}
 
 vector<Card> SortCards(vector<Card> cards) {
 	sort(cards.begin(), cards.end(), [](const Card& a, const Card& b) {
@@ -398,6 +533,46 @@ vector<Card> SortCards(vector<Card> cards) {
 		});
 
 	return cards;
+}
+
+wstring getSymbolUsingValue(int value) {
+	switch (value) {
+	case 0: return L"A";
+	case 1: return L"2";
+	case 2: return L"3";
+	case 3: return L"4";
+	case 4: return L"5";
+	case 5: return L"6";
+	case 6: return L"7";
+	case 7: return L"8";
+	case 8: return L"9";
+	case 9: return L"10";
+	case 10: return L"J";
+	case 11: return L"Q";
+	case 12: return L"K";
+	case 13: return L"BJoker";
+	case 14: return L"RJoker";
+	default: return L"Unknown Value";
+	}
+}
+
+int getValueUsingSymbol(const wstring symbol) {
+	if (symbol == L"A") return 0;
+	else if (symbol == L"2") return 1;
+	else if (symbol == L"3") return 2;
+	else if (symbol == L"4") return 3;
+	else if (symbol == L"5") return 4;
+	else if (symbol == L"6") return 5;
+	else if (symbol == L"7") return 6;
+	else if (symbol == L"8") return 7;
+	else if (symbol == L"9") return 8;
+	else if (symbol == L"10") return 9;
+	else if (symbol == L"J") return 10;
+	else if (symbol == L"Q") return 11;
+	else if (symbol == L"K") return 12;
+	else if (symbol == L"BJOKER" || symbol == L"JOKER") return 13;
+	else if (symbol == L"RJOKER") return 14;
+	else return -1;  // For unknown values
 }
 
 
