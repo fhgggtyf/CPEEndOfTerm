@@ -5,8 +5,25 @@
 #include <vector>
 #include <random>
 #include <algorithm>
-#include <fcntl.h>   // For _O_U16TEXT
-#include <io.h>      // For _setmode()
+
+// Check if compiling for Windows
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+
+void setUnicodeOutput() {
+	// Set the output to Unicode mode
+	_setmode(_fileno(stdout), _O_U16TEXT);
+}
+#else
+#include <locale>
+#include <codecvt>
+
+void setUnicodeOutput() {
+	// Set locale to handle UTF-8 characters
+	std::locale::global(std::locale(std::locale(""), new std::codecvt_utf8<wchar_t>));
+}
+#endif    // For _setmode()
 
 using namespace std;
 
@@ -323,7 +340,7 @@ public:
 };
 
 int main() {
-	_setmode(_fileno((__acrt_iob_func(1))), _O_U16TEXT);
+	setUnicodeOutput();
 
 	// Create group of participants
 	Participant** participants = new Participant * [PLAYERNUM];
