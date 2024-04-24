@@ -38,6 +38,8 @@ public:
 		}
 		else {
 			cout << "err";
+			suit = static_cast<Suit>(0);
+			value = -1;
 		}
 	}
 
@@ -82,7 +84,7 @@ class Participant {
 
 protected:
 	vector<Card> cards;
-	int numOfCards;
+	int numOfCards = 0;
 	wstring name;
 
 public:
