@@ -251,7 +251,7 @@ public:
 					break;
 				}
 				else {
-					cout << "Invalid Input." << endl;
+					cout << "Card Input Invalid" << endl;
 				}
 			}
 		}
@@ -378,50 +378,100 @@ int main() {
 
 	Participant* winner;
 
-	while (gameOn) {
-		cards = Shuffle(cards);
-		SplitCards(cards, participants);
+	choice = -1;
 
-		srand(time(NULL));
-		index = rand() % PLAYERNUM;
-
-		// First player play
-		cout << participants[index % PLAYERNUM]->GetName() << " got the first move!" << endl;
-		prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();
-		index++;
-
-		while (true) {
-			cout << "\n" << participants[index % PLAYERNUM]->GetName() << "'s turn!" << endl;
-			if (prevCard[index % PLAYERNUM] != nullptr) { // If previous move was never contested
-				prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();  // Have a free move
-			}
-			else { //If there is a previous move
-				prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->Move(prevCard);  // Move according to prev move
-			}
-
-			// If successfully contested
-			if (prevCard[index % PLAYERNUM] != nullptr) {
-
-				for (int i = 0; i < PLAYERNUM - 1; i++) {
-					prevCard[(index + i + 1) % PLAYERNUM] = nullptr;
-				}
-				// Clear other history
-			}
-
-			// If no more card left
-			if (participants[index % PLAYERNUM]->GetCardNum() == 0) {
-				// Get winner and break loop
-				winner = participants[index % PLAYERNUM];
-				break;
-			}
-
-			// Advance to next player
-			index++;
+	while (true) {
+		cout << "Welcome to the game of See Who's Fastest!" << endl;
+		cout << "1) Start Game" << endl;
+		cout << "2) Help" << endl;
+		cout << "3) Exit" << endl;
+		cin >> choice;
+		while (!cin) {
+			std::cin.clear(); // Clear the error flag
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			cout << "Invalid input" << endl;
+			cout << "Welcome to the game of " << endl;
+			cout << "1) Start Game" << endl;
+			cout << "2) Help" << endl;
+			cout << "3) Exit" << endl;
+			cin >> choice;
 		}
 
-		cout << "Winner is: " << winner->GetName() << endl;
-		gameOn = false;
+		if (choice == 1) {
+
+			Participant** participants = new Participant * [PLAYERNUM];
+
+			int choice;
+			for (int i = 0; i < PLAYERNUM; i++) {
+				cout << "Add a player (0: AI, 1: Player):";
+				cin >> choice;
+				if (choice == 1) {
+					participants[i] = new Player(i);
+				}
+				else {
+					participants[i] = new Computer(i);
+				}
+			}
+
+			while (gameOn) {
+				cards = Shuffle(cards);
+				SplitCards(cards, participants);
+
+				srand(time(NULL));
+				index = rand() % PLAYERNUM;
+
+				// First player play
+				cout << participants[index % PLAYERNUM]->GetName() << " got the first move!" << endl;
+				prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();
+				index++;
+
+				while (true) {
+					cout << "\n" << participants[index % PLAYERNUM]->GetName() << "'s turn!" << endl;
+					if (prevCard[index % PLAYERNUM] != nullptr) { // If previous move was never contested
+						prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->FreeMove();  // Have a free move
+					}
+					else { //If there is a previous move
+						prevCard[index % PLAYERNUM] = participants[index % PLAYERNUM]->Move(prevCard);  // Move according to prev move
+					}
+
+					// If successfully contested
+					if (prevCard[index % PLAYERNUM] != nullptr) {
+
+						for (int i = 0; i < PLAYERNUM - 1; i++) {
+							prevCard[(index + i + 1) % PLAYERNUM] = nullptr;
+						}
+						// Clear other history
+					}
+
+					// If no more card left
+					if (participants[index % PLAYERNUM]->GetCardNum() == 0) {
+						// Get winner and break loop
+						winner = participants[index % PLAYERNUM];
+						break;
+					}
+
+					// Advance to next player
+					index++;
+				}
+
+				cout << "Winner is: " << winner->GetName() << endl;
+				gameOn = false;
+			}
+		}
+		else if (choice == 2) {
+			cout << "Press 1 in the main menu to enter game. The software will give the user 18 cards (from one deck of card) to each player (including two jokers), then a randomly selected player will start the game by discarding one or more cards.The acceptable form of card discarded in this game is only one single card, two or more cards with the same value(e.g. double 5, triple 9, quadruple k, double joker, etc.)Then, the next player(order determined by the loop of user, computer 1, and computer 2; if, for instance, computer 1 is the first player to discard a deck, the next one will be computer 2, then the user, etc.) shall discard cards that’s either 1. bigger in value(e.g. 1 < 2 < ... < k < black joker < red joker) or 2. bigger in quantity of the same card, and this process continues on for every next player.Notice that quantity is always considered before number(e.g.single 5 < double 4 < triple 3 < quadruple 2 < double joker) so that whenever one player discards one single card, another player can discard double cards regardless of the value of the card, and similar things hold for triple cards and quadruple cards.Double joker is considered the biggest card(although with only two cards, double joker is considered bigger than all quadruple cards and so on, this is an exception).For cards in the same quantity, the value of the card is compared(e.g. double 4 < double 6, triple j < triple k, quadruple 5 < quadruple 9, etc.) Overall, the whole pattern of every card is as follows\n1 < 2 < ... < red joker<double 1 < double 2 < ...<double k < triple 1 < triple 2 < ... < triple k < quadruple 1 < quadruple 2 < ... < quadruple k<double joker.\nIf the next player has no card bigger than the previous user, the player shall pass.After the other two players both pass, the player who discarded the biggest card may discard any new card and this process continues on and on(e.g. if one player discards double joker, that player gets to discard a new card by his / her / its preference since double joker is the biggest card, and the other two players can do nothing but pass).The game ends when one of the three players discards all cards, and that player is the winner." << endl;
+		}
+		else if (choice == 3) {
+			cout << "Exiting game..." << endl;
+			break;
+		}
+		else {
+			cout << "Invalid Choice" << endl;
+		}
+
 	}
+
+	return 0;
 }
 
 vector<Card> GenerateDeck() {
